@@ -1,0 +1,8 @@
+pip install fastapi==0.104.1
+pip install uvicorn==0.24.0.post1
+pip install sqlalchemy==2.0.23
+pip install requests==2.31.0
+pip install beautifulsoup4==4.12.2
+pip install feedparser==6.0.10
+pip install openai==1.14.0
+pip install chromadb==0.4.24
