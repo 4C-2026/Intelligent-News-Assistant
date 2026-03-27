@@ -85,6 +85,9 @@ cp .env.example .env
 
 ```bash
 uvicorn main:app --reload
+
+或指定端口
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8001
 ```
 
 服务启动后，访问：

@@ -4,6 +4,7 @@ from database import engine
 from models.base import Base
 import os
 from dotenv import load_dotenv
+from routers import news
 import models   # 这会触发 __init__.py 中的导入，所有模型都被注册到 Base.metadata
 
 load_dotenv()
@@ -23,6 +24,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 注册路由
+app.include_router(news.router)
+
 @app.get("/")
 def root():
     return {"message": "Hello World"}
+
+
