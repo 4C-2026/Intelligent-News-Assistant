@@ -4,21 +4,15 @@ from sqlalchemy.orm import Session
 from database import get_db
 from services.recommend_service import get_recommendations
 from models.article import Article
-from typing import Dict, Any
+from services.auth_service import get_current_user
 
 router = APIRouter(prefix="/api/recommend", tags=["recommend"])
-
-# 临时占位：假设成员E提供的依赖
-async def get_current_user():
-    # 成员E会实现这个，我们先用假数据
-    # TODO: 替换为真实的用户认证逻辑
-    return {"id": 1}
 
 @router.get("/")
 def get_recommendations_endpoint(
     limit: int = 10,
     db: Session = Depends(get_db),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """
     获取个性化推荐新闻列表
@@ -30,7 +24,7 @@ def get_recommendations_endpoint(
     Args:
         limit: 返回新闻数量，默认10条
         db: 数据库会话
-        current_user: 当前用户信息
+        current_user: 当前登录用户（从JWT token中解析）
 
     Returns:
         {
@@ -41,7 +35,7 @@ def get_recommendations_endpoint(
         }
     """
     try:
-        user_id = current_user["id"]
+        user_id = current_user.id
 
         # 调用推荐服务
         result = get_recommendations(db, user_id, limit)
