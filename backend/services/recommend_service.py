@@ -1,5 +1,5 @@
 # backend/services/recommend_service.py
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
 from models.article import Article
 from models.interaction import Interaction
@@ -7,6 +7,7 @@ from services.embedding_service import get_embedding
 from services.vector_store import search_by_vector
 import numpy as np
 from datetime import datetime, timedelta
+from sklearn.cluster import KMeans
 
 
 def get_user_liked_articles(db: Session, user_id: int) -> List[int]:
@@ -121,6 +122,92 @@ def calculate_average_vector(db: Session, article_ids: List[int]) -> Optional[Li
         return None
 
 
+def cluster_vectors(embeddings: List[List[float]], n_clusters: int = 3) -> List[List[int]]:
+    """
+    对向量列表进行聚类，返回每个簇的索引
+
+    Args:
+        embeddings: 向量列表
+        n_clusters: 聚类数量，默认为3
+
+    Returns:
+        List[List[int]]: 每个簇包含的向量索引列表
+    """
+    if not embeddings:
+        return []
+
+    try:
+        # 转换为numpy数组
+        embeddings_array = np.array(embeddings)
+
+        # 如果新闻数量小于聚类数，则调整聚类数
+        actual_clusters = min(n_clusters, len(embeddings))
+
+        # 使用K-means聚类
+        kmeans = KMeans(n_clusters=actual_clusters, random_state=42, n_init=10)
+        cluster_labels = kmeans.fit_predict(embeddings_array)
+
+        # 按簇分组
+        clusters = [[] for _ in range(actual_clusters)]
+        for idx, label in enumerate(cluster_labels):
+            clusters[label].append(idx)
+
+        # 打印聚类结果
+        print(f"📊 聚类结果：共 {actual_clusters} 个类别")
+        for i, cluster in enumerate(clusters):
+            print(f"   类别 {i + 1}: {len(cluster)} 篇新闻")
+
+        return clusters
+
+    except Exception as e:
+        print(f"❌ 向量聚类失败: {e}")
+        # 如果聚类失败，返回所有向量作为一个簇
+        return [list(range(len(embeddings)))]
+
+
+def get_article_vectors_with_ids(db: Session, article_ids: List[int]) -> Optional[Tuple[List[int], List[List[float]]]]:
+    """
+    获取新闻ID列表对应的向量
+
+    Args:
+        db: 数据库会话
+        article_ids: 新闻ID列表
+
+    Returns:
+        Tuple[List[int], List[List[float]]] or None: (新闻ID列表, 向量列表)
+    """
+    if not article_ids:
+        return None
+
+    try:
+        # 从数据库获取新闻内容
+        articles = db.query(Article).filter(Article.id.in_(article_ids)).all()
+
+        if not articles:
+            return None
+
+        # 获取每篇新闻的向量
+        article_ids_list = []
+        embeddings = []
+        for article in articles:
+            try:
+                embedding = get_embedding(article.content)
+                article_ids_list.append(article.id)
+                embeddings.append(embedding)
+            except Exception as e:
+                print(f"⚠️ 新闻 {article.id} 向量化失败: {e}")
+                continue
+
+        if not embeddings:
+            return None
+
+        return article_ids_list, embeddings
+
+    except Exception as e:
+        print(f"❌ 获取新闻向量失败: {e}")
+        return None
+
+
 def get_personalized_recommendations(
     db: Session,
     user_id: int,
@@ -128,7 +215,15 @@ def get_personalized_recommendations(
     exclude_article_ids: Optional[List[int]] = None
 ) -> List[int]:
     """
-    基于用户点赞历史生成个性化推荐（使用向量相似度）
+    基于用户点赞历史生成个性化推荐（使用向量相似度+聚类）
+
+    逻辑：
+    1. 获取用户点赞的新闻ID
+    2. 获取这些新闻的向量
+    3. 对向量进行聚类分类
+    4. 每个类别分别计算平均向量
+    5. 使用每个平均向量搜索相似新闻
+    6. 合并结果并过滤
 
     Args:
         db: 数据库会话
@@ -148,28 +243,60 @@ def get_personalized_recommendations(
         # 如果用户没有点赞记录，返回空列表
         return []
 
-    # 2. 计算用户点赞新闻的平均向量
-    average_vector = calculate_average_vector(db, liked_article_ids)
+    # 2. 获取新闻向量
+    result = get_article_vectors_with_ids(db, liked_article_ids)
 
-    if not average_vector:
-        # 如果向量化失败，返回空列表
+    if not result:
         return []
 
-    # 3. 使用平均向量在向量库中搜索相似新闻
-    similar_article_ids = search_by_vector(average_vector, n_results=limit * 2)
+    article_ids_list, embeddings = result
 
-    if not similar_article_ids:
+    if len(embeddings) == 0:
         return []
 
-    # 4. 过滤掉用户已点赞的新闻
-    recommended_ids = [
-        aid for aid in similar_article_ids
+    # 3. 对向量进行聚类
+    # 根据新闻数量决定聚类数量：新闻越多，聚类数越多
+    n_clusters = min(3, len(embeddings))  # 最多3个类别
+    clusters = cluster_vectors(embeddings, n_clusters=n_clusters)
+
+    if not clusters:
+        return []
+
+    # 4. 每个类别分别计算平均向量并搜索相似新闻
+    all_recommended_ids = []
+    n_results_per_cluster = (limit * 2) // len(clusters) + 1  # 每个类别搜索的新闻数
+
+    for cluster_indices in clusters:
+        if not cluster_indices:
+            continue
+
+        # 获取该类别的向量
+        cluster_embeddings = [embeddings[i] for i in cluster_indices]
+
+        # 计算该类别的平均向量
+        cluster_avg_vector = np.mean(cluster_embeddings, axis=0).tolist()
+
+        # 使用该平均向量搜索相似新闻
+        similar_ids = search_by_vector(cluster_avg_vector, n_results=n_results_per_cluster)
+
+        if similar_ids:
+            all_recommended_ids.extend(similar_ids)
+
+    # 去重
+    unique_recommended_ids = list(set(all_recommended_ids))
+
+    # 5. 过滤掉用户已点赞的新闻和需要排除的新闻
+    filtered_ids = [
+        aid for aid in unique_recommended_ids
         if aid not in liked_article_ids and aid not in exclude_article_ids
     ]
 
-    # 5. 从数据库获取这些新闻，按发布时间排序（只返回最近的）
+    if not filtered_ids:
+        return []
+
+    # 6. 从数据库获取这些新闻，按发布时间排序（只返回最近的）
     recommended_articles = db.query(Article).filter(
-        Article.id.in_(recommended_ids)
+        Article.id.in_(filtered_ids)
     ).order_by(
         Article.published_at.desc()
     ).limit(limit).all()
