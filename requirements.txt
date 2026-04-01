@@ -1,0 +1,54 @@
+# Intelligent News Assistant - 核心依赖包
+# 版本基于当前虚拟环境中已安装的包
+# 使用命令安装: pip install -r requirements.txt
+
+# ==================== 核心依赖 ====================
+# Web框架和服务器
+fastapi==0.104.1
+uvicorn==0.24.0.post1
+
+# 数据库和ORM
+sqlalchemy==2.0.44
+
+# 向量数据库 (用于新闻RAG系统)
+chromadb==0.4.24
+
+# AI/ML相关 (用于智谱API调用)
+openai==2.30.0          # 智谱API使用OpenAI兼容接口
+zhipuai==2.1.5.20250825 # 智谱AI官方SDK
+
+# 数据验证和序列化
+pydantic==2.12.4
+
+# 环境变量管理
+python-dotenv==1.2.1
+
+# HTTP客户端 (用于API调用)
+requests==2.31.0
+
+# ==================== 开发依赖 ====================
+# HTTP客户端 (用于API调用测试)
+httpx==0.28.1
+
+# 异步支持
+anyio==4.11.0
+
+# 工具类
+click==8.3.1
+typing_extensions==4.15.0
+
+# ==================== 可选依赖 ====================
+# 以下依赖根据实际需要启用
+# numpy==2.3.5                    # 数值计算
+# pandas==2.3.3                   # 数据处理
+# scikit-learn==1.7.2             # 机器学习
+# sentence-transformers==5.1.2    # 句子向量化
+# langchain==1.1.0                # LLM应用框架
+# langchain-community==0.4.1      # LangChain社区集成
+
+# ==================== 安装说明 ====================
+# 1. 安装所有依赖: pip install -r requirements.txt
+# 2. 仅安装核心依赖: pip install fastapi uvicorn sqlalchemy chromadb openai zhipuai pydantic python-dotenv
+# 3. 创建虚拟环境: python -m venv venv
+# 4. 激活虚拟环境: venv\Scripts\activate (Windows)
+# 5. 升级pip: python -m pip install --upgrade pip
