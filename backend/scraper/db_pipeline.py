@@ -63,13 +63,22 @@ def import_from_json(json_file):
                 raw_tags = item.get("tags", "")
                 cover_image = item.get("cover_image", None)
                 
-                # 如果没有缓存，则调大模型
+                # 使用大模型审核内容并生成摘要
+                is_valid = True
                 if not summary or not raw_tags or raw_tags == "未分类":
                     try:
                         if content:
-                            print(f"正在使用大模型分析文章: {title[:20]}...")
-                            # 增加大模型分析的上下文长度到3000，获取更好的摘要
+                            print(f"正在使用大模型分析和审核文章: {title[:20]}...")
+                            # 增加大模型分析的上下文长度到3000，获取更好的摘要和判定
                             llm_result = get_news_summary_and_tags(content[:3000])
+                            
+                            is_valid = llm_result.get("is_valid", True)
+                            
+                            if not is_valid:
+                                reason = llm_result.get("reason", "未知原因")
+                                print(f"🚫 垃圾内容已拦截: {title[:20]}... | 原因: {reason}")
+                                continue  # 跳过这条数据，不入库
+                            
                             summary = llm_result.get("summary", content[:100] + '...')
                             raw_tags = llm_result.get("tags", [])
                     except Exception as e:
@@ -77,6 +86,10 @@ def import_from_json(json_file):
                         summary = content[:100] + '...' if content else ''
                         raw_tags = []
                 
+                # 再次确认：如果是明确被标记为无效的，跳过
+                if not is_valid:
+                    continue
+
                 # 解析出原始标签列表
                 if isinstance(raw_tags, str):
                     tag_list = [t.strip() for t in raw_tags.split(",") if t.strip()]
