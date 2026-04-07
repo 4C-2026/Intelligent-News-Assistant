@@ -9,7 +9,11 @@ class NewsService:
     def get_news_list(db: Session, page: int = 1, size: int = 10) -> Dict[str, Any]:
         """获取新闻列表，返回分页数据和总数"""
         skip = (page - 1) * size
-        articles = db.query(Article).offset(skip).limit(size).all()
+        # 按发布时间倒序排列，最新的在前面。如果发布时间为空，则按照数据库ID倒序（最新入库的）
+        articles = db.query(Article).order_by(
+            Article.published_at.desc().nullslast(),
+            Article.id.desc()
+        ).offset(skip).limit(size).all()
         total = db.query(Article).count()
 
         items = [
@@ -18,6 +22,7 @@ class NewsService:
                 "title": a.title,
                 "summary": a.summary,
                 "tags": a.tags,
+                "cover_image": getattr(a, "cover_image", None),
                 "published_at": a.published_at.isoformat() if a.published_at else None,
             }
             for a in articles
@@ -43,5 +48,6 @@ class NewsService:
             "summary": article.summary,
             "tags": article.tags,
             "source_url": article.source_url,
+            "cover_image": getattr(article, "cover_image", None),
             "published_at": article.published_at.isoformat() if article.published_at else None,
         }

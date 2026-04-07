@@ -185,55 +185,6 @@ def get_embeddings_batch(texts: List[str]) -> List[List[float]]:
     return service.get_embeddings_batch(texts)
 '''
 
-# 如果直接运行，进行简单测试
-if __name__ == "__main__":
-    # 测试连接
-    service = EmbeddingService()
-    
-    print("🔍 测试向量化服务连接...")
-    
-        
-        # 测试单个文本向量化
-    print("\n🔍 测试单个文本向量化...")
-    test_text = "今天有什么重要新闻？"
-    try:
-        embedding = service.get_embedding(test_text)
-        print(f"✅ 向量化成功！")
-        print(f"   文本: {test_text}")
-        print(f"   向量维度: {len(embedding)}")
-        print(f"   前5个值: {embedding[:5]}")
-    except Exception as e:
-        print(f"❌ 向量化失败: {e}")
-        
-        # 测试批量向量化
-    print("\n🔍 测试批量向量化...")
-    test_texts = [
-            "科技新闻：人工智能新突破",
-            "经济新闻：股市大幅上涨",
-            "体育新闻：中国队获得金牌"
-        ]
-    try:
-            embeddings = service.get_embeddings_batch(test_texts)
-            print(f"✅ 批量向量化成功！")
-            print(f"   处理文本数量: {len(test_texts)}")
-            print(f"   返回向量数量: {len(embeddings)}")
-            print(f"   每个向量维度: {len(embeddings[0]) if embeddings else 0}")
-    except Exception as e:
-            print(f"❌ 批量向量化失败: {e}")
-        
-        # 测试空文本处理
-    print("\n🔍 测试空文本处理...")
-    try:
-            embedding = service.get_embedding("")
-            print(f"❌ 空文本测试失败，应该抛出异常但返回了: {embedding}")
-    except ValueError as e:
-            print(f"✅ 空文本测试成功，正确抛出异常: {e}")
-    except Exception as e:
-            print(f"❌ 空文本测试失败，抛出错误类型不正确: {e}")
-            
-        # 测试向量维度
-    print("\n🔍 测试向量维度...")
-    dimension = service.get_embedding_dimension()
-    print(f"✅ 向量维度: {dimension}")
+
         
    

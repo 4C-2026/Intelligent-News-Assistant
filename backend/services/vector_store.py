@@ -10,6 +10,9 @@ from pathlib import Path
 
 # 添加services目录到Python路径
 sys.path.insert(0, str(Path(__file__).parent))
+#  固定项目根目录（永远不变，不随运行目录变化）
+PROJECT_ROOT = Path(__file__).parent.parent  # vector_store.py 在 backend/services/ → 回到根目录
+FIXED_CHROMA_DIR = str(PROJECT_ROOT / "chroma_db")  #  固定向量库路径
 
 try:
     import chromadb
@@ -34,7 +37,7 @@ class VectorStore:
     - article_id: 新闻在数据库的唯一ID（对应Article.id）
     """
     
-    def __init__(self, persist_directory: str = "./chroma_db", collection_name: str = "news_collection"):
+    def __init__(self, persist_directory: str = FIXED_CHROMA_DIR, collection_name: str = "news_collection"):
         """
         初始化Chroma向量数据库连接
         
@@ -336,63 +339,3 @@ def search_by_vector(vector: List[float], n_results: int = 5) -> List[int]:
     """
     vector_store = _get_vector_store()
     return vector_store.search_by_vector(vector, n_results)
-
-# ============================================================================
-# 使用示例
-# ============================================================================
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("📚 向量存储模块使用示例")
-    print("=" * 60)
-    
-    # 示例1: 单篇新闻添加
-    print("\n1. 单篇新闻添加示例:")
-    try:
-        success = add_news(
-            article_id=1001,
-            content="OpenAI发布GPT-5，在多项基准测试中表现优异。该模型在自然语言理解、代码生成和创造性写作方面有显著提升。"
-        )
-        print(f"   结果: {'成功' if success else '失败'}")
-    except Exception as e:
-        print(f"   错误: {e}")
-    
-    # 示例2: 批量新闻添加
-    print("\n2. 批量新闻添加示例:")
-    try:
-        news_batch = [
-            {"article_id": 1002, "content": "中国人工智能产业发展迅速，年增长率超过30%。在计算机视觉、自然语言处理等领域取得重要突破。"},
-            {"article_id": 1003, "content": "特斯拉发布全自动驾驶系统FSD V12，安全性大幅提升。新版本采用了端到端的神经网络架构。"},
-            {"article_id": 1004, "content": "苹果发布Vision Pro，开启空间计算新时代。该设备采用了先进的眼动追踪和手势识别技术。"},
-        ]
-        success = add_news_batch(news_batch)
-        print(f"   结果: {'成功' if success else '失败'}")
-    except Exception as e:
-        print(f"   错误: {e}")
-    
-
-    
-    # 示例4: 向量检索（需要先获取查询向量）
-    print("\n4. 向量检索示例:")
-    try:
-        # 先获取查询文本的向量
-        from embedding_service import get_embedding
-        query_text = "人工智能有什么最新进展？"
-        query_vector = get_embedding(query_text)
-        
-        # 检索相似新闻
-        results = search_by_vector(query_vector, n_results=3)
-        
-        if results:
-            print(f"   查询: '{query_text}'")
-            print(f"   找到 {len(results)} 条相似新闻:")
-            for i, article_id in enumerate(results, 1):
-                print(f"     {i}. ID:{article_id}")
-        else:
-            print("   未找到相似新闻")
-    except Exception as e:
-        print(f"   错误: {e}")
-    
-    print("\n" + "=" * 60)
-    print("✅ 示例执行完成")
-    print("=" * 60)

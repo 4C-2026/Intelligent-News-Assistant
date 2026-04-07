@@ -31,49 +31,52 @@ def get_user_liked_articles(db: Session, user_id: int) -> List[int]:
 
 def get_popular_articles(db: Session, limit: int = 10, days: int = 7) -> List[int]:
     """
-    获取最近最受欢迎的新闻ID列表（基于点赞数量排序）
-    "最近"是指新闻的发布时间（published_at）在指定天数内
+    获取最近最受欢迎的新闻ID列表（如果没有足够的点赞数据，就用最新新闻兜底）
 
     Args:
         db: 数据库会话
         limit: 返回数量
-        days: 最近多少天内
+        days: 最近多少天内（忽略天数，直接取最新）
 
     Returns:
         List[int]: 热门新闻ID列表
     """
-    # 计算时间范围：只统计最近N天内发布的新闻
-    time_threshold = datetime.now() - timedelta(days=days)
-
-    # 统计最近N天内发布的新闻的点赞数量
     from sqlalchemy import func
 
-    # 先获取最近N天内发布的新闻ID
-    recent_article_ids = db.query(Article.id).filter(
-        Article.published_at >= time_threshold
-    ).all()
+    popular_ids = []
+    
+    try:
+        # 先获取点赞最多的新闻
+        popular_query = db.query(
+            Interaction.article_id,
+            func.count(Interaction.id).label('like_count')
+        ).filter(
+            Interaction.action_type == 'like'
+        ).group_by(
+            Interaction.article_id
+        ).order_by(
+            func.count(Interaction.id).desc()
+        ).limit(limit)
 
-    recent_article_ids = [aid for aid, in recent_article_ids]
+        popular_ids = [article_id for article_id, _ in popular_query.all()]
+    except Exception as e:
+        print(f"查询热门新闻失败: {e}")
 
-    if not recent_article_ids:
-        # 如果最近没有新闻，返回空列表
-        return []
-
-    # 统计这些新闻的点赞数量
-    popular_query = db.query(
-        Interaction.article_id,
-        func.count(Interaction.id).label('like_count')
-    ).filter(
-        Interaction.action_type == 'like',
-        Interaction.article_id.in_(recent_article_ids)
-    ).group_by(
-        Interaction.article_id
-    ).order_by(
-        func.count(Interaction.id).desc()
-    ).limit(limit)
-
-    # 获取新闻ID列表
-    popular_ids = [article_id for article_id, _ in popular_query.all()]
+    # 如果基于点赞的新闻不够 limit，用数据库中最新的新闻补齐
+    if len(popular_ids) < limit:
+        try:
+            remaining = limit - len(popular_ids)
+            latest_articles = db.query(Article.id).order_by(
+                Article.published_at.desc()
+            ).limit(remaining + len(popular_ids) + 5).all()
+            
+            for aid, in latest_articles:
+                if aid not in popular_ids:
+                    popular_ids.append(aid)
+                if len(popular_ids) >= limit:
+                    break
+        except Exception as e:
+            print(f"获取最新新闻兜底失败: {e}")
 
     return popular_ids
 
@@ -263,8 +266,9 @@ def get_personalized_recommendations(
         return []
 
     # 4. 每个类别分别计算平均向量并搜索相似新闻
-    all_recommended_ids = []
-    n_results_per_cluster = (limit * 2) // len(clusters) + 1  # 每个类别搜索的新闻数
+    all_recommended_items = []
+    # 因为数据库文章总数可能很少，我们让 Chroma 尽量多返回候选项
+    n_results_per_cluster = max(10, (limit * 3) // len(clusters) + 1)
 
     for cluster_indices in clusters:
         if not cluster_indices:
@@ -276,34 +280,39 @@ def get_personalized_recommendations(
         # 计算该类别的平均向量
         cluster_avg_vector = np.mean(cluster_embeddings, axis=0).tolist()
 
-        # 使用该平均向量搜索相似新闻
-        similar_ids = search_by_vector(cluster_avg_vector, n_results=n_results_per_cluster)
+        # 使用该平均向量搜索相似新闻，返回 [(aid, distance), ...]
+        similar_items = search_by_vector(cluster_avg_vector, n_results=n_results_per_cluster)
 
-        if similar_ids:
-            all_recommended_ids.extend(similar_ids)
+        if similar_items:
+            all_recommended_items.extend(similar_items)
 
-    # 去重
-    unique_recommended_ids = list(set(all_recommended_ids))
+    # 5. 去重并过滤掉已点赞的新闻，并保留最佳得分
+    unique_items_map = {}
+    for aid, dist in all_recommended_items:
+        if aid in liked_article_ids or aid in exclude_article_ids:
+            continue
+        # Chroma 的 distance 越小越相似，通常为余弦距离
+        # 将 distance 转换为相似度分数 (0~1)
+        # 余弦距离最大通常是 2，相似度 = 1 - (dist / 2)
+        score = max(0.0, 1.0 - (dist / 2.0))
+        
+        # 对于同一个新闻，保留最高的分数
+        if aid not in unique_items_map or score > unique_items_map[aid]:
+            unique_items_map[aid] = score
 
-    # 5. 过滤掉用户已点赞的新闻和需要排除的新闻
-    filtered_ids = [
-        aid for aid in unique_recommended_ids
-        if aid not in liked_article_ids and aid not in exclude_article_ids
-    ]
-
-    if not filtered_ids:
+    if not unique_items_map:
         return []
 
-    # 6. 从数据库获取这些新闻，按发布时间排序（只返回最近的）
-    recommended_articles = db.query(Article).filter(
-        Article.id.in_(filtered_ids)
-    ).order_by(
-        Article.published_at.desc()
-    ).limit(limit).all()
+    # 按相似度得分排序
+    sorted_items = sorted(unique_items_map.items(), key=lambda x: x[1], reverse=True)
+    
+    # 取前 limit 个
+    top_items = sorted_items[:limit]
+    
+    # 构造返回结构
+    final_results = [{"id": aid, "score": score} for aid, score in top_items]
 
-    final_ids = [article.id for article in recommended_articles]
-
-    return final_ids
+    return final_results
 
 
 def get_recommendations(
@@ -344,27 +353,36 @@ def get_recommendations(
         # 场景2: 用户有点赞记录 -> 使用个性化推荐
         print(f"👤 用户 {user_id} 有 {len(liked_article_ids)} 条点赞记录，使用个性化推荐")
 
-        recommended_ids = get_personalized_recommendations(
-            db=db,
-            user_id=user_id,
-            limit=limit,
-            exclude_article_ids=liked_article_ids
-        )
+        try:
+            recommended_results = get_personalized_recommendations(
+                db=db,
+                user_id=user_id,
+                limit=limit,
+                exclude_article_ids=liked_article_ids
+            )
+        except Exception as e:
+            print(f"❌ 个性化推荐计算失败，降级为兜底热门推荐: {e}")
+            recommended_results = []
 
-        # 如果个性化推荐结果不足，用热门新闻补充
-        if len(recommended_ids) < limit:
-            remaining = limit - len(recommended_ids)
-            popular_ids = get_popular_articles(db, limit=remaining, days=7)
+        # 获取文章ID列表用于后续处理
+        recommended_ids = [item["id"] if isinstance(item, dict) else item for item in recommended_results]
 
-            # 过滤掉已推荐的和已点赞的
-            additional_ids = [
-                aid for aid in popular_ids
-                if aid not in recommended_ids and aid not in liked_article_ids
-            ]
-
-            recommended_ids.extend(additional_ids[:remaining])
+        # [修改] 只有当个性化推荐"完全为空"时，才使用最新新闻兜底。
+        # 如果能查出来哪怕只有1条个性化推荐，我们也返回那1条，这样能让用户明显感受到推荐变化。
+        if not recommended_results:
+            try:
+                print("❌ 向量检索没有找到任何相似文章，尝试获取最新新闻作为兜底...")
+                latest_articles = db.query(Article.id).order_by(
+                    Article.published_at.desc()
+                ).limit(limit).all()
+                
+                for aid, in latest_articles:
+                    if aid not in liked_article_ids:
+                        recommended_results.append({"id": aid, "score": 0.5})
+            except Exception as e:
+                print(f"❌ 极致兜底获取最新新闻也失败了: {e}")
 
         return {
-            "article_ids": recommended_ids,
-            "strategy": "personalized"
+            "article_ids": recommended_results,
+            "strategy": "personalized" if len(recommended_ids) > 0 else "fallback_latest"
         }
