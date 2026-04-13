@@ -232,3 +232,10 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+
+# 其他可能的忽略项（根据项目需要添加）
+backend/chroma_db/
+backend/news.db
+backend/scraper/*.json
+backend/scraper/*.xml

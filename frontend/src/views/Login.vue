@@ -9,8 +9,10 @@
       </div>
     </div>
     <div class="login-container">
-      <div class="login-card">
-        <div class="login-header">
+      <div class="login-card" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
+        <div class="particles-container" ref="particlesContainer"></div>
+        <div class="login-content">
+          <div class="login-header">
           <h1>📰</h1>
           <h2>新语</h2>
           <p>智能新闻助手</p>
@@ -97,6 +99,7 @@
             </el-form>
           </el-tab-pane>
         </el-tabs>
+        </div>
       </div>
     </div>
   </div>
@@ -113,6 +116,109 @@ const activeTab = ref('login')
 const loading = ref(false)
 const loginFormRef = ref(null)
 const registerFormRef = ref(null)
+
+// 粒子交互效果
+const particlesContainer = ref(null)
+let particleInterval = null
+
+const createEdgeParticle = () => {
+  if (!particlesContainer.value) return
+  
+  const rect = particlesContainer.value.getBoundingClientRect()
+  const w = rect.width
+  const h = rect.height
+  
+  // 沿边缘生成
+  const perimeter = 2 * (w + h)
+  const p = Math.random() * perimeter
+  
+  let x, y
+  // 内缩一点，使得粒子从卡片后方边缘飘出来更加自然
+  const offset = 8 
+  
+  if (p < w) { // 上边缘
+    x = p
+    y = offset
+  } else if (p < w + h) { // 右边缘
+    x = w - offset
+    y = p - w
+  } else if (p < 2 * w + h) { // 下边缘
+    x = 2 * w + h - p
+    y = h - offset
+  } else { // 左边缘
+    x = offset
+    y = 2 * (w + h) - p
+  }
+
+  const particle = document.createElement('div')
+  particle.className = 'interaction-particle'
+  
+  // 高级轻量感：小尺寸，带有色彩的柔和发光
+  const size = Math.random() * 2.5 + 1.5 // 1.5px - 4px
+  const colors = [
+    'rgba(59, 130, 246, 0.9)',   // blue-500
+    'rgba(139, 92, 246, 0.9)',   // violet-500
+    'rgba(14, 165, 233, 0.9)',   // sky-500
+    'rgba(255, 255, 255, 0.9)'   // white
+  ]
+  const color = colors[Math.floor(Math.random() * colors.length)]
+  
+  particle.style.width = `${size}px`
+  particle.style.height = `${size}px`
+  particle.style.background = color
+  particle.style.boxShadow = `0 0 ${size * 2}px ${color}`
+  particle.style.left = `${x}px`
+  particle.style.top = `${y}px`
+  
+  // 缓慢向外和向上飘散
+  const centerX = w / 2
+  const centerY = h / 2
+  const dirX = (x - centerX) / centerX
+  const dirY = (y - centerY) / centerY
+  
+  const distance = Math.random() * 45 + 25 // 飘散距离
+  const tx = dirX * distance + (Math.random() - 0.5) * 15
+  const ty = dirY * distance - Math.random() * 20
+  
+  particle.style.setProperty('--tx', `${tx}px`)
+  particle.style.setProperty('--ty', `${ty}px`)
+  
+  const duration = Math.random() * 1.5 + 2 // 2s - 3.5s
+  particle.style.animationDuration = `${duration}s`
+  
+  particlesContainer.value.appendChild(particle)
+  
+  setTimeout(() => {
+    if (particlesContainer.value?.contains(particle)) {
+      particlesContainer.value.removeChild(particle)
+    }
+  }, duration * 1000)
+}
+
+const handleMouseEnter = () => {
+  if (particleInterval) clearInterval(particleInterval)
+  
+  // 初始散发一批
+  for(let i = 0; i < 18; i++) {
+    setTimeout(createEdgeParticle, Math.random() * 400)
+  }
+  
+  // 持续生成，进一步增加粒子密度
+  particleInterval = setInterval(() => {
+    // 每次生成 3 个，一定概率生成第 4 个
+    createEdgeParticle()
+    createEdgeParticle()
+    createEdgeParticle()
+    if(Math.random() > 0.3) createEdgeParticle()
+  }, 150) // 再次加快生成频率
+}
+
+const handleMouseLeave = () => {
+  if (particleInterval) {
+    clearInterval(particleInterval)
+    particleInterval = null
+  }
+}
 
 const loginForm = reactive({
   username: '',
@@ -296,6 +402,20 @@ const handleRegister = async () => {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
   border: 1px solid rgba(255, 255, 255, 0.6);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.login-content {
+  position: relative;
+  z-index: 1;
+}
+
+.particles-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 24px;
+  z-index: -1;
 }
 .login-card:hover {
   transform: translateY(-2px);
@@ -388,5 +508,33 @@ const handleRegister = async () => {
 :deep(.el-input__prefix-inner) {
   color: var(--ina-text-3);
   font-size: 18px;
+}
+</style>
+
+<style>
+/* 将粒子样式放在全局以防止 scoped 导致动态生成的 DOM 无法匹配动画和样式 */
+.interaction-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: particle-float-edge cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  opacity: 0;
+  z-index: 0;
+}
+
+@keyframes particle-float-edge {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--tx) * 0.2), calc(-50% + var(--ty) * 0.2)) scale(1.2);
+  }
+  100% {
+    transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0.2);
+    opacity: 0;
+  }
 }
 </style>
