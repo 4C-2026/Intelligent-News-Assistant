@@ -8,7 +8,7 @@ from models.article import Article
 
 router = APIRouter(prefix="/api/crawl", tags=["crawl"])
 
-# ── 爬虫运行状态（内存级，重启后重置）────────────────────────────────────
+# 爬虫运行状态（内存级，重启后重置）
 _crawl_status = {
     "running": False,
     "last_run": None,
