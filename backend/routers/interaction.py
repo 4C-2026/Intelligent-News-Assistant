@@ -9,14 +9,12 @@ from services.auth_service import get_current_user
 router = APIRouter(prefix="/api", tags=["互动"])
 
 
-
 class LikeRequest(BaseModel):
     article_id: int
 
 
 class ReadRequest(BaseModel):
     article_id: int
-
 
 
 @router.post("/like", summary="点赞新闻")

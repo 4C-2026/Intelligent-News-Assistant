@@ -75,7 +75,6 @@ class EmbeddingService:
             
 
 
-
 # 对外提供的函数接口
 def get_embedding(text: str) -> List[float]:
     """

@@ -9,17 +9,14 @@ from database import get_db
 from models import User
 from config import settings
 
-
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
-
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # OAuth2 认证方案
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/user/login")
-
 
 
 def hash_password(password: str) -> str:
@@ -30,7 +27,6 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """验证密码"""
     return pwd_context.verify(plain_password, hashed_password)
-
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -54,7 +50,6 @@ def decode_token(token: str) -> Optional[dict]:
         return payload
     except JWTError:
         return None
-
 
 
 def authenticate_user(db: Session, username: str, password: str) -> Optional[User]:
