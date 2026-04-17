@@ -46,7 +46,6 @@ def get_today_date():
 
 def is_today_news(url, today_date):
     """判断是否是今天的新闻"""
-    # 检查URL中是否包含今天的日期
     return today_date in url
 
 def extract_date_from_sina_url(url):
@@ -105,7 +104,7 @@ def parse_sina_news(html_content):
         
         # 如果没有匹配到模式，检查链接特征
         if not is_news:
-            # 检查是否包含日期和doc-
+            # 检查是否包含日期和doc
             if '/doc-' in href and re.search(r'\d{4}-\d{2}-\d{2}', href):
                 is_news = True
             # 排除频道首页
@@ -155,14 +154,12 @@ def extract_pengpai_publish_time(html):
             match = re.search(r'(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})', text)
             if match:
                 return f'{match.group(1)} {match.group(2)}'
-            # 匹配日期格式，例如：2026年03月28日 10:30
             match = re.search(r'(\d{4})年(\d{2})月(\d{2})日\s+(\d{2}):(\d{2})', text)
             if match:
                 return f'{match.group(1)}-{match.group(2)}-{match.group(3)} {match.group(4)}:{match.group(5)}'
     
     # 如果没有找到，从整个页面的文本中提取时间
     all_text = soup.get_text()
-    # 匹配日期格式，例如：2026-03-28 17:28
     match = re.search(r'(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})', all_text)
     if match:
         return f'{match.group(1)} {match.group(2)}'

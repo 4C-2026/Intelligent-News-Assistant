@@ -19,7 +19,7 @@ class ContentExtractor:
         if not text:
             return text
             
-        # 需要整行删除的无意义关键词（黑名单）
+        # 需要整行删除的无意义关键词
         noise_keywords = [
             '查看更多', '开始答题', '扫码下载', '澎湃新闻客户端', 
             'Android版', 'iPhone版', 'iPad版', '关于澎湃', 
@@ -30,7 +30,28 @@ class ContentExtractor:
             '新浪财经', '新浪体育', '新浪娱乐', '新浪科技', '新浪网', '未经授权',
             '不得转载', '免责声明', '相关阅读', '延伸阅读', '猜你喜欢', '点击查看',
             '评论区', '发表评论', '全部评论', '分享到', '朋友圈', '微信扫描', '二维码',
-            '责任编辑', '校对', '来源：', '点击查看全文', '点赞', '收藏', '转发', '视频号'
+            '责任编辑', '校对', '来源：', '点击查看全文', '点赞', '收藏', '转发', '视频号',
+            # 澎湃新闻特有噪声关键词
+            '法律声明', '隐私政策', '沪ICP备', '沪公网安备', '互联网新闻信息服务许可证',
+            '增值电信业务经营许可证', '© 2014-', '澎湃矩阵', '澎湃新闻微博', '澎湃新闻公众号',
+            '澎湃新闻抖音号', '派生万物开放平台', 'IP SHANGHAI', 'SIXTH TONE', '澎湃新闻报料：',
+            '我要举报', '报料热线:', '报料邮箱:', '图片编辑：', 'x新闻报料',
+            '10%公司', '一号专案', '全球速报', '澎湃评论', '大国外交', '绿政公署', '长三角政商',
+            '澎湃特约评论员', '澎湃新闻', '澎湃评论', '隐私政策', '法律声明', '图片编辑',
+            '反馈', '澎湃新闻记者 ', '沈轲', '张艳', '美数课', '字号',
+            '澎湃号', '澎湃新闻记者', '澎湃新闻编辑', '澎湃新闻实习生', '澎湃新闻特约记者',
+            '澎湃新闻特约评论员', '澎湃新闻特约撰稿人', '澎湃新闻特约编辑', '澎湃新闻特约实习生',
+            '新浪新闻记者', '新浪新闻编辑', '新浪新闻实习生', '新浪新闻特约记者',
+            '新浪新闻特约评论员', '新浪新闻特约撰稿人', '新浪新闻特约编辑', '新浪新闻特约实习生',
+            '记者', '编辑', '实习生', '特约记者', '特约评论员', '特约撰稿人', '特约编辑', '特约实习生',
+            '文/', '文/图', '图/', '图/文', '摄影/', '摄影/图', '图/摄影',
+            '（完）', '（全文完）', '（结束）', '（全文结束）', '（终）', '（全文终）',
+            '点击进入专题', '专题：', '更多精彩内容', '精彩推荐', '热门推荐', '推荐阅读',
+            '往期回顾', '历史文章', '相关专题', '专题报道', '系列报道', '连续报道',
+            '声明：', '注：', '备注：', '说明：', '提示：', '提醒：', '注意：',
+            '版权声明', '版权归', '版权所有', '转载请联系', '转载须知', '转载声明',
+            '合作媒体', '媒体合作', '战略合作', '合作伙伴', '合作机构', '支持机构',
+            '广告位', '广告内容', '广告合作', '商业合作', '商务合作', '品牌合作','澎湃首席评论员','与归'
         ]
         
         lines = text.split('\n')
@@ -39,7 +60,15 @@ class ContentExtractor:
         # 强干扰词，只要段落中包含这些词，不管多长都直接整段丢弃
         strong_noise_keywords = [
             '阅读排行榜', '评论排行榜', '相关新闻投资热点', '点击加载更多', 
-            '尽在新浪财经', '新浪财经APP', '加载中点击加载更多', '扫二维码'
+            '尽在新浪财经', '新浪财经APP', '加载中点击加载更多', '扫二维码',
+            '澎湃新闻报料：021-962866', '报料热线: 021-962866', '报料邮箱: news@thepaper.cn',
+            '沪ICP备14003370号', '沪公网安备31010602000299号', '互联网新闻信息服务许可证：31120170006',
+            '增值电信业务经营许可证：沪B2-2017116', '© 2014-2026 上海东方报业有限公司',
+            '新浪新闻APP下载', '澎湃新闻APP下载', '客户端下载', 'APP下载',
+            '意见反馈', '用户反馈', '联系我们', '关于我们', '网站地图', '站点地图',
+            '隐私条款', '服务条款', '使用条款', '用户协议', '注册协议', '登录协议',
+            '举报中心', '举报电话', '举报邮箱', '投诉电话', '投诉邮箱', '维权电话',
+            '不良信息举报', '违法和不良信息举报', '网络举报', '互联网举报'
         ]
         
         for line in lines:
@@ -47,19 +76,19 @@ class ContentExtractor:
             if not line_strip:
                 continue
                 
-            # 强干扰词，包含直接整段删除
+            
             if any(kw in line_strip for kw in strong_noise_keywords):
                 continue
                 
-            # 如果这一行比较短，并且包含黑名单关键词，直接干掉
+           
             if len(line_strip) < 60 and any(kw in line_strip for kw in noise_keywords):
                 continue
                 
-            # 开头是特定词的直接干掉
+           
             if line_strip.startswith(('责任编辑', '来源：', '校对：', '撰文：', '原标题：', '延伸阅读', '相关阅读')):
                 continue
                 
-            # 单个字符或者只有各种符号的行也干掉
+           
             if len(line_strip) <= 2 and not re.search(r'[a-zA-Z0-9\u4e00-\u9fa5]', line_strip):
                 continue
                 
@@ -98,7 +127,6 @@ class ContentExtractor:
         for selector in content_selectors:
             content_elem = soup.select_one(selector)
             if content_elem:
-                # 寻找封面图
                 if not cover_image:
                     img = content_elem.find('img')
                     if img and img.get('src') and not img.get('src').endswith('.gif'):
@@ -127,7 +155,7 @@ class ContentExtractor:
                 else:
                     text = content_elem.get_text(separator='\n', strip=True)
                     
-                # 清理多余空白
+                
                 text = re.sub(r'\n{2,}', '\n', text)
                 text = self.clean_text(text)
                 return text[:8000], cover_image  # 增加长度限制
@@ -158,7 +186,7 @@ class ContentExtractor:
         
         cover_image = None
         
-        # 澎湃新闻的内容选择器
+       
         content_selectors = [
             '.news_txt',  # 澎湃新闻正文
             '.content',
@@ -212,7 +240,7 @@ class ContentExtractor:
         """提取新浪新闻的发布时间"""
         soup = BeautifulSoup(html, 'html.parser')
         
-        # 尝试多种可能的时间选择器
+        
         time_selectors = [
             '.date',
             '#pub_date',
@@ -352,7 +380,7 @@ class ContentExtractor:
                     
                     time.sleep(0.5)  # 避免请求过快
             
-            # 保存结果
+            
             with open(output_file_path, 'w', encoding='utf-8') as f:
                 json.dump(results, f, ensure_ascii=False, indent=2)
             

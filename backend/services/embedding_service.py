@@ -19,10 +19,10 @@ class EmbeddingService:
         Args:
             api_key: 智谱API密钥，如果为None则从环境变量读取
         """
-        # 加载环境变量
+        
         load_dotenv()
         
-        # 获取API密钥
+        
         self.api_key = api_key or os.getenv("ZHIPU_API_KEY")
         if not self.api_key:
             raise ValueError("ZHIPU_API_KEY not found in environment variables or provided")
@@ -39,16 +39,6 @@ class EmbeddingService:
     def get_embedding(self, text: str) -> List[float]:
         """
         获取文本的向量表示
-        
-        Args:
-            text: 需要向量化的文本（新闻正文或用户提问）
-            
-        Returns:
-            List[float]: 文本的向量表示
-            
-        Raises:
-            ValueError: 如果文本为空或只包含空白字符
-            RuntimeError: 如果API调用失败
         """
         # 验证输入文本
         if not text or not text.strip():
@@ -62,7 +52,7 @@ class EmbeddingService:
                 encoding_format="float"  # 确保返回浮点数列表
             )
             
-            # 提取向量数据
+           
             embedding = response.data[0].embedding
             
             # 验证向量维度（embedding-2模型通常是1024维）
@@ -83,53 +73,6 @@ class EmbeddingService:
             else:
                 raise RuntimeError(f"Failed to get embedding: {e}") from e
             
-    '''
-    def get_embeddings_batch(self, texts: List[str]) -> List[List[float]]:
-        """
-        批量获取文本的向量表示
-        
-        Args:
-            texts: 需要向量化的文本列表
-            
-        Returns:
-            List[List[float]]: 每个文本的向量表示列表
-            
-        Raises:
-            ValueError: 如果文本列表为空或包含空文本
-            RuntimeError: 如果API调用失败
-        """
-        if not texts:
-            raise ValueError("Texts list cannot be empty")
-        
-        # 过滤空文本
-        valid_texts = [text.strip() for text in texts if text and text.strip()]
-        if not valid_texts:
-            raise ValueError("All texts are empty or whitespace only")
-        
-        if len(valid_texts) != len(texts):
-            print(f"Warning: {len(texts) - len(valid_texts)} empty texts were filtered out")
-        
-        try:
-            # 调用智谱向量化API（批量）
-            response = self.client.embeddings.create(
-                model=self.model,
-                input=valid_texts,
-                encoding_format="float"
-            )
-            
-            # 提取所有向量数据
-            embeddings = [data.embedding for data in response.data]
-            
-            # 验证返回的向量数量与输入文本数量一致
-            if len(embeddings) != len(valid_texts):
-                raise RuntimeError(f"API returned {len(embeddings)} embeddings, expected {len(valid_texts)}")
-            
-            return embeddings
-            
-        except Exception as e:
-            raise RuntimeError(f"Failed to get batch embeddings: {e}") from e
-    '''
-    
 
 
 # 对外提供的函数接口
@@ -157,33 +100,6 @@ def get_embedding(text: str) -> List[float]:
     
     service = EmbeddingService()
     return service.get_embedding(text)
-
-'''
-def get_embeddings_batch(texts: List[str]) -> List[List[float]]:
-    """
-    批量获取文本的向量表示（对外接口）
-    
-    Args:
-        texts: 需要向量化的文本列表
-        
-    Returns:
-        List[List[float]]: 每个文本的向量表示列表
-        
-    Raises:
-        ValueError: 如果文本列表为空或包含空文本
-        RuntimeError: 如果API调用失败
-        
-    Example:
-        >>> from embedding_service import get_embeddings_batch
-        >>> vectors = get_embeddings_batch(["新闻1", "新闻2", "问题"])
-        >>> print(f"获取了 {len(vectors)} 个向量")
-    """
-    if not texts:
-        raise ValueError("Texts list cannot be empty")
-    
-    service = EmbeddingService()
-    return service.get_embeddings_batch(texts)
-'''
 
 
         

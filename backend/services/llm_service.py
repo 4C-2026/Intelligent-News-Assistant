@@ -16,14 +16,10 @@ class LLMService:
     def __init__(self, api_key: Optional[str] = None):
         """
         初始化LLM服务
-        
-        Args:
-            api_key: 智谱API密钥，如果为None则从环境变量读取
         """
-        # 加载环境变量
         load_dotenv()
         
-        # 获取API密钥
+        
         self.api_key = api_key or os.getenv("ZHIPU_API_KEY")
         if not self.api_key:
             raise ValueError("ZHIPU_API_KEY not found in environment variables or provided")
@@ -40,16 +36,8 @@ class LLMService:
     def get_news_summary_and_tags(self, news_content: str) -> Dict[str, any]:
         """
         获取新闻摘要和标签
-        
-        Args:
-            news_content: 新闻正文内容
-            
-        Returns:
-            Dict包含:
-            - summary: 50-100字新闻摘要
-            - tags: 3个中文标签列表
         """
-        # 构建系统提示词
+       
         system_prompt = """你是一个专业的新闻编辑，负责生成新闻摘要和标签。
         
         要求：
@@ -114,12 +102,6 @@ class LLMService:
     def _adjust_summary_length(self, summary: str) -> str:
         """
         调整摘要长度到50-100字
-        
-        Args:
-            summary: 原始摘要
-            
-        Returns:
-            调整后的摘要
         """
         # 简单的中文字数统计（一个中文字符算一个字）
         chinese_chars = [c for c in summary if '\u4e00' <= c <= '\u9fff']
@@ -168,23 +150,10 @@ class LLMService:
 def get_news_summary_and_tags(news_content: str) -> Dict[str, any]:
     """
     获取新闻摘要和标签（对外接口）
-    
-    Args:
-        news_content: 新闻正文内容
-        
-    Returns:
-        Dict包含:
-        - summary: 50-100字新闻摘要
-        - tags: 3个中文标签列表
-        
-    Raises:
-        ValueError: 如果API密钥未设置或新闻内容为空
-        RuntimeError: 如果API调用失败
     """
     if not news_content or not news_content.strip():
         raise ValueError("News content cannot be empty")
     
     service = LLMService()
     return service.get_news_summary_and_tags(news_content)
-
 

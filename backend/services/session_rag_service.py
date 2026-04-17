@@ -361,11 +361,13 @@ class SessionRAGService:
             
             # 4. 在向量库中进行相似度检索
             print(f"  正在检索最相关的 {self.top_k} 篇新闻...")
-            relevant_article_ids = search_by_vector(query_vector, n_results=self.top_k)
+            relevant_items = search_by_vector(query_vector, n_results=self.top_k)
             
-            if not relevant_article_ids:
+            if not relevant_items:
                 return "抱歉，目前没有找到相关的新闻内容来回答您的问题。"
             
+            # 提取文章ID列表
+            relevant_article_ids = [item[0] for item in relevant_items]
             print(f"  找到相关新闻ID: {relevant_article_ids}")
             
             # 5. 获取新闻内容

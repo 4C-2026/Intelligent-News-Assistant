@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
-# 添加 backend 目录到 Python 路径
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from database import get_db
@@ -43,7 +42,7 @@ def import_from_json(json_file):
         
         db = next(get_db())
         
-        # 用于批量添加到向量库的新闻列表
+       
         news_for_vector_store = []
         
         for item in data:
@@ -63,13 +62,12 @@ def import_from_json(json_file):
                 raw_tags = item.get("tags", "")
                 cover_image = item.get("cover_image", None)
                 
-                # 使用大模型审核内容并生成摘要
+                
                 is_valid = True
                 if not summary or not raw_tags or raw_tags == "未分类":
                     try:
                         if content:
                             print(f"正在使用大模型分析和审核文章: {title[:20]}...")
-                            # 增加大模型分析的上下文长度到3000，获取更好的摘要和判定
                             llm_result = get_news_summary_and_tags(content[:3000])
                             
                             is_valid = llm_result.get("is_valid", True)
@@ -86,7 +84,7 @@ def import_from_json(json_file):
                         summary = content[:100] + '...' if content else ''
                         raw_tags = []
                 
-                # 再次确认：如果是明确被标记为无效的，跳过
+               
                 if not is_valid:
                     continue
 
@@ -113,7 +111,7 @@ def import_from_json(json_file):
                     "体育": ["体育", "足球", "篮球", "比赛", "奥运", "夺冠"]
                 }
                 
-                # 开始匹配
+              
                 for cat, words in keywords.items():
                     if any(w in text_for_mapping for w in words):
                         main_cat = cat
@@ -151,7 +149,7 @@ def import_from_json(json_file):
         db.commit()
         print(f'成功导入 {len(data)} 条数据到数据库')
         
-        # 批量添加到向量库
+       
         if news_for_vector_store:
             print(f'正在将 {len(news_for_vector_store)} 条新闻添加到向量库...')
             try:
@@ -172,10 +170,9 @@ def import_from_json(json_file):
             db.close()
 
 def main():
-    # 获取脚本所在目录
     script_dir = Path(__file__).parent
     
-    # 导入新浪新闻
+   
     sina_json = script_dir / 'sina_content.json'
     if sina_json.exists():
         print('导入新浪新闻...')
@@ -183,7 +180,7 @@ def main():
     else:
         print(f'⚠️ 新浪新闻文件不存在: {sina_json}')
     
-    # 导入澎湃新闻
+   
     pengpai_json = script_dir / 'pengpai_content.json'
     if pengpai_json.exists():
         print('导入澎湃新闻...')

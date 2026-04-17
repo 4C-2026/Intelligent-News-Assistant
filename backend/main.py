@@ -53,13 +53,17 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # ── CORS ──────────────────────────────────────────────────────────────────
-origins = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
-origins.extend([
-    "http://127.0.0.1:5173",
-    "http://localhost:5173",
-    "http://localhost:3000"
-])
-origins = list(set(origins))
+# 生产环境建议通过 .env 配置 CORS_ORIGINS，默认允许所有跨域以便刚部署时跑通
+origins_env = os.getenv("CORS_ORIGINS", "*")
+origins = origins_env.split(",") if origins_env != "*" else ["*"]
+
+if "*" not in origins:
+    origins.extend([
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+        "http://localhost:3000"
+    ])
+    origins = list(set(origins))
 
 app.add_middleware(
     CORSMiddleware,

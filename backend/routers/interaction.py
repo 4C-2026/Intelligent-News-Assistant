@@ -9,7 +9,6 @@ from services.auth_service import get_current_user
 router = APIRouter(prefix="/api", tags=["互动"])
 
 
-# ===== 请求模型 =====
 class LikeRequest(BaseModel):
     article_id: int
 
@@ -18,7 +17,6 @@ class ReadRequest(BaseModel):
     article_id: int
 
 
-# ===== 接口实现 =====
 @router.post("/like", summary="点赞新闻")
 def like_article(
     request: LikeRequest,

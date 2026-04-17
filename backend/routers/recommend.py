@@ -1,4 +1,3 @@
-# backend/routers/recommend.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
@@ -16,28 +15,11 @@ def get_recommendations_endpoint(
 ):
     """
     获取个性化推荐新闻列表
-
-    推荐策略：
-    1. 用户第一次登录（无点赞记录）-> 返回最近的热门新闻
-    2. 用户非第一次登录（有点赞记录）-> 基于向量相似度返回个性化推荐
-
-    Args:
-        limit: 返回新闻数量，默认10条
-        db: 数据库会话
-        current_user: 当前登录用户（从JWT token中解析）
-
-    Returns:
-        {
-            "code": 0,
-            "message": "success",
-            "data": [...],
-            "strategy": "popular" 或 "personalized"
-        }
     """
     try:
         user_id = current_user.id
 
-        # 调用推荐服务
+        
         result = get_recommendations(db, user_id, limit)
         recommended_items = result["article_ids"]
         strategy = result["strategy"]

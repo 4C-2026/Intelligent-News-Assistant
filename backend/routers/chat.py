@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api", tags=["chat"])
 
 
 class ChatMessage(BaseModel):
-    role: str  # "user" 或 "assistant"
+    role: str  # "user"或"assistant"
     content: str
 
 

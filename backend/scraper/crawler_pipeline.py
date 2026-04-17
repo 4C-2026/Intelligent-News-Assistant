@@ -23,7 +23,7 @@ def run_full_pipeline(max_items: int = 15) -> dict:
     """
     stats = {"sina": 0, "pengpai": 0, "errors": []}
 
-    # ── Step 1: 抓取首页，生成 RSS ──────────────────────────────────────
+    #1:抓取首页，生成 RSS 
     try:
         from scraper.rss_crawler import (
             fetch_page, parse_sina_news, parse_pengpai_news,
@@ -61,7 +61,7 @@ def run_full_pipeline(max_items: int = 15) -> dict:
         logger.error(f"[Pipeline] {msg}")
         stats["errors"].append(msg)
 
-    # ── Step 2: 提取正文，输出 JSON ──────────────────────────────────────
+    #2: 提取正文，输出 JSON
     try:
         from scraper.content_extractor import ContentExtractor
         extractor = ContentExtractor()
@@ -88,7 +88,7 @@ def run_full_pipeline(max_items: int = 15) -> dict:
         logger.error(f"[Pipeline] {msg}")
         stats["errors"].append(msg)
 
-    # ── Step 3: 写入数据库 + 向量库 ──────────────────────────────────────
+    #3:写入数据库 + 向量库
     try:
         from scraper.db_pipeline import import_from_json
         logger.info("[Pipeline] Step 3 - 写入数据库")

@@ -196,7 +196,7 @@ class VectorStore:
             print(f"❌ {error_msg}")
             raise RuntimeError(error_msg) from e
     
-    def search_by_vector(self, vector: List[float], n_results: int = 5) -> List[int]:
+    def search_by_vector(self, vector: List[float], n_results: int = 5) -> List[Tuple[int, float]]:
         """
         根据向量检索相似新闻
         
@@ -205,7 +205,8 @@ class VectorStore:
             n_results: 返回的最相似新闻数量，默认5条
             
         Returns:
-            List[int]: 相似新闻的ID列表（article_id）
+            List[Tuple[int, float]]: 相似新闻的ID和距离列表，格式为[(article_id, distance), ...]
+                distance是余弦距离，越小表示越相似
                 
         Raises:
             ValueError: 如果向量为空或n_results无效
@@ -223,19 +224,20 @@ class VectorStore:
             results = self.collection.query(
                 query_embeddings=[vector],
                 n_results=n_results,
-                include=["metadatas"]
+                include=["metadatas", "distances"]
             )
             
-            # 解析结果，只返回article_id列表
-            article_ids = []
+            # 解析结果，返回(article_id, distance)元组列表
+            article_items = []
             
             if results["ids"] and results["ids"][0]:
                 for i in range(len(results["ids"][0])):
                     metadata = results["metadatas"][0][i]
-                    article_ids.append(int(metadata["article_id"]))
+                    distance = results["distances"][0][i]
+                    article_items.append((int(metadata["article_id"]), float(distance)))
             
-            print(f"✅ 检索完成，找到 {len(article_ids)} 条相似新闻")
-            return article_ids
+            print(f"✅ 检索完成，找到 {len(article_items)} 条相似新闻")
+            return article_items
             
         except Exception as e:
             error_msg = f"检索相似新闻失败: {e}"
@@ -311,7 +313,7 @@ def add_news_batch(news_list: List[Dict[str, Any]]) -> bool:
     vector_store = _get_vector_store()
     return vector_store.add_news_batch(news_list)
 
-def search_by_vector(vector: List[float], n_results: int = 5) -> List[int]:
+def search_by_vector(vector: List[float], n_results: int = 5) -> List[Tuple[int, float]]:
     """
     根据向量检索相似新闻（对外接口）
     
@@ -320,7 +322,8 @@ def search_by_vector(vector: List[float], n_results: int = 5) -> List[int]:
         n_results: 返回的最相似新闻数量，默认5条
         
     Returns:
-        List[int]: 相似新闻的ID列表（article_id）
+        List[Tuple[int, float]]: 相似新闻的ID和距离列表，格式为[(article_id, distance), ...]
+            distance是余弦距离，越小表示越相似
             
     Raises:
         ValueError: 如果向量为空或n_results无效
