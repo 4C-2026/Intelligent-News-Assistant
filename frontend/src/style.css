@@ -1,0 +1,253 @@
+/*
+  Intelligent News Assistant - Global Design Tokens
+  目标：更现代、更 AI、更“资讯产品化”的观感；不改功能，仅统一视觉体系。
+*/
+
+:root {
+  /* Brand - Richer, more vibrant colors */
+  --ina-primary: #2563eb; 
+  --ina-primary-2: #1d4ed8;
+  --ina-accent: #8b5cf6; /* Added purple accent for richness */
+  --ina-accent-2: #c026d3; /* Magenta accent */
+  --ina-success: #10b981;
+  --ina-warning: #f59e0b;
+  --ina-danger: #ef4444;
+  --ina-ai-gradient: linear-gradient(135deg, #2563eb 0%, #8b5cf6 50%, #c026d3 100%);
+
+  /* Surfaces */
+  --ina-bg: #f8fafc;
+  --ina-bg-2: #f1f5f9;
+  --ina-surface: rgba(255, 255, 255, 0.75);
+  --ina-surface-solid: #ffffff;
+  --ina-border: #e2e8f0;
+  --ina-border-light: rgba(226, 232, 240, 0.4);
+  
+  /* Refined Shadows */
+  --ina-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04);
+  --ina-shadow: 0 4px 8px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --ina-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04);
+  --ina-shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.06);
+
+  /* Typography */
+  --ina-text: #121212; /* High contrast black */
+  --ina-text-2: #444444; /* Readable dark gray for main text */
+  --ina-text-3: #8590a6; /* Softer gray for metadata */
+
+  /* Radius */
+  --ina-radius-sm: 6px;
+  --ina-radius-md: 12px;
+  --ina-radius-lg: 20px;
+
+  /* Element Plus theme variables (CSS vars) */
+  --el-color-primary: var(--ina-primary);
+  --el-border-radius-base: var(--ina-radius-sm);
+  --el-border-color: var(--ina-border);
+  --el-text-color-primary: var(--ina-text);
+  --el-text-color-regular: var(--ina-text-2);
+  --el-bg-color: var(--ina-surface-solid);
+  --el-bg-color-page: var(--ina-bg);
+  --el-box-shadow-light: var(--ina-shadow);
+  
+  /* Additional El overrides */
+  --el-font-size-base: 14px;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  background-color: var(--ina-bg);
+  color: var(--ina-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* ==================== 全局炫彩动态背景 ==================== */
+/* 背景底层（固定为浅色，提供基础对比度） */
+html {
+  background-color: var(--ina-bg); 
+}
+
+body {
+  background-color: transparent !important;
+  position: relative;
+}
+
+/* 动态网格背景 - 增强对比度 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-image: 
+    linear-gradient(rgba(37, 99, 235, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center center;
+  mask-image: radial-gradient(circle at center, black 50%, transparent 90%);
+  -webkit-mask-image: radial-gradient(circle at center, black 50%, transparent 90%);
+  pointer-events: none;
+}
+
+/* 动态流光背景 - 显著增强颜色饱和度和面积 */
+body::after {
+  content: '';
+  position: fixed;
+  inset: -20%; /* 让渐变更大，避免边缘被切断 */
+  width: 140%;
+  height: 140%;
+  z-index: -1;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(37, 99, 235, 0.25), transparent 45%),
+    radial-gradient(circle at 80% 40%, rgba(139, 92, 246, 0.25), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgba(192, 38, 211, 0.20), transparent 50%);
+  filter: blur(80px);
+  animation: bgPulse 12s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+  pointer-events: none;
+}
+
+#app {
+  min-height: 100vh;
+  position: relative;
+  z-index: 1; 
+  background: transparent !important; /* 确保应用层完全透明 */
+}
+
+@keyframes bgPulse {
+  0% { transform: scale(1) translate(0, 0); opacity: 0.7; }
+  50% { transform: scale(1.1) translate(2%, -3%); opacity: 1; }
+  100% { transform: scale(0.95) translate(-2%, 2%); opacity: 0.8; }
+}
+/* ======================================================== */
+
+/* Page Transition Animations */
+.page-transition-enter-active,
+.page-transition-leave-active {
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+              transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.page-transition-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+.page-transition-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+/* links */
+a {
+  color: var(--ina-accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+a:hover {
+  color: var(--ina-primary);
+}
+
+/*
+  Element Plus - Card polish
+*/
+.el-card {
+  border: 1px solid var(--ina-border-light);
+  border-radius: var(--ina-radius-md);
+  background: var(--ina-surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.el-card:not(.is-never-shadow) {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+.el-card.is-hover-shadow:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  transform: translateY(-4px);
+  border-color: rgba(0, 102, 255, 0.2);
+}
+
+/* Button overrides for more enterprise feel */
+.el-button {
+  font-weight: 500;
+  border-radius: var(--ina-radius-sm);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.el-button:active {
+  transform: scale(0.92) !important;
+}
+.el-button--primary {
+  background: var(--ina-primary) !important;
+  border-color: var(--ina-primary) !important;
+}
+.el-button--primary:hover {
+  background: var(--ina-ai-gradient) !important;
+  border-color: transparent !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px -2px rgba(37, 99, 235, 0.3);
+}
+.el-button.is-round {
+  border-radius: 9999px;
+}
+
+/* Input overrides */
+.el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--ina-border) inset !important;
+  border-radius: var(--ina-radius-sm);
+  transition: all 0.2s ease;
+}
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 2px var(--ina-primary) inset !important;
+}
+
+/* Tag overrides */
+.el-tag {
+  border: none;
+  font-weight: 500;
+}
+
+/* Common page container helpers (optional, used by views) */
+.ina-page {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+}
+.ina-page--narrow {
+  width: min(920px, 100%);
+}
+.ina-glass {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+.ina-muted {
+  color: var(--ina-text-3);
+}
+
+/* subtle nicer page padding on very small screens */
+@media (max-width: 768px) {
+  body {
+    background-attachment: fixed;
+  }
+}
+
+/* 更细腻的滚动条（可选） */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(31, 45, 61, 0.25) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(31, 45, 61, 0.18);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(31, 45, 61, 0.28);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
