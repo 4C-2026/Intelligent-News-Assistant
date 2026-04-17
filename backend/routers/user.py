@@ -16,11 +16,7 @@ from datetime import timedelta
 router = APIRouter(prefix="/api/user", tags=["用户"])
 
 
-<<<<<<< HEAD
-#请求/响应模型 
-=======
 # ===== 请求/响应模型 =====
->>>>>>> c5ffa4a1c91f317acda2cd9831e611013eb90f87
 class UserRegisterRequest(BaseModel):
     username: str
     password: str
@@ -40,22 +36,14 @@ class TokenResponse(BaseModel):
     data: dict
 
 
-<<<<<<< HEAD
-#接口实现
-=======
 # ===== 接口实现 =====
->>>>>>> c5ffa4a1c91f317acda2cd9831e611013eb90f87
 @router.post("/register", summary="用户注册")
 def register(
     request: UserRegisterRequest,
     db: Session = Depends(get_db)
 ):
     """用户注册"""
-<<<<<<< HEAD
-    
-=======
     # 1. 检查用户名是否已存在
->>>>>>> c5ffa4a1c91f317acda2cd9831e611013eb90f87
     existing_user = db.query(User).filter(
         User.username == request.username
     ).first()
@@ -66,11 +54,7 @@ def register(
             detail="用户名已存在"
         )
     
-<<<<<<< HEAD
-    
-=======
     # 2. 创建新用户
->>>>>>> c5ffa4a1c91f317acda2cd9831e611013eb90f87
     hashed_password = hash_password(request.password)
     new_user = User(
         username=request.username,
